@@ -4,7 +4,7 @@ const path = require("path");
 
 const root = __dirname;
 const port = Number(process.env.PORT || 4173);
-const host = "127.0.0.1";
+const host = process.env.HOST || "127.0.0.1";
 
 const types = {
   ".html": "text/html; charset=utf-8",
