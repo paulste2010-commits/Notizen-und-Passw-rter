@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Passwort & Notizen Tresor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app" class="app-shell">
+    <section id="lockScreen" class="lock-screen">
+      <div class="brand-mark" aria-hidden="true">#</div>
+      <h1>Passwort & Notizen Tresor</h1>
+      <p id="lockHint">Erstelle ein Master-Passwort. Deine Daten bleiben verschlüsselt in diesem Browser.</p>
+      <form id="unlockForm" class="unlock-form">
+        <label for="accountName">Account-Name</label>
+        <input id="accountName" type="text" autocomplete="username" minlength="2" maxlength="40" required placeholder="z. B. Paul">
+
+        <label for="masterPassword">Master-Passwort</label>
+        <div class="password-line">
+          <input id="masterPassword" type="password" autocomplete="current-password" minlength="8" required>
+          <button class="icon-button" id="toggleMaster" type="button" aria-label="Passwort anzeigen" title="Passwort anzeigen">eye</button>
+        </div>
+        <button id="unlockButton" class="primary-button" type="submit">Tresor starten</button>
+        <p id="lockMessage" class="message" role="status"></p>
+      </form>
+    </section>
+
+    <section id="vaultScreen" class="vault-screen hidden">
+      <header class="topbar">
+        <div>
+          <span class="eyebrow">Offline Tresor</span>
+          <h2>Passwörter & Notizen</h2>
+          <p id="accountLabel" class="account-label"></p>
+        </div>
+        <div class="topbar-actions">
+          <button id="themeButton" class="ghost-button" type="button" title="Hellen oder dunklen Hintergrund wechseln">Dunkel</button>
+          <button id="exportButton" class="ghost-button" type="button" title="Backup exportieren">Export</button>
+          <label class="ghost-button import-label" title="Backup importieren">
+            Import
+            <input id="importFile" type="file" accept="application/json">
+          </label>
+          <button id="lockButton" class="danger-button" type="button" title="Tresor sperren">Sperren</button>
+        </div>
+      </header>
+
+      <section class="toolbar">
+        <div class="search-box">
+          <span aria-hidden="true">Suche</span>
+          <input id="searchInput" type="search" placeholder="Suchen nach Titel, Login, Webadresse oder Text">
+        </div>
+        <div class="segmented" role="tablist" aria-label="Eintragstyp">
+          <button class="segment active" type="button" data-filter="all">Alle</button>
+          <button class="segment" type="button" data-filter="password">Passwörter</button>
+          <button class="segment" type="button" data-filter="note">Notizen</button>
+        </div>
+        <button id="newPasswordButton" class="primary-button" type="button">+ Passwort</button>
+        <button id="newNoteButton" class="secondary-button" type="button">+ Notiz</button>
+      </section>
+
+      <section class="workspace">
+        <aside class="list-pane">
+          <div class="stats">
+            <strong id="entryCount">0</strong>
+            <span>Einträge</span>
+          </div>
+          <div id="entryList" class="entry-list" aria-live="polite"></div>
+        </aside>
+
+        <section class="editor-pane">
+          <form id="entryForm" class="entry-form hidden">
+            <div class="form-head">
+              <div>
+                <span id="formType" class="eyebrow">Passwort</span>
+                <h3 id="formTitle">Neuer Eintrag</h3>
+              </div>
+              <button id="deleteButton" class="danger-button compact" type="button">Löschen</button>
+            </div>
+
+            <label>
+              Titel
+              <input id="titleInput" type="text" required maxlength="80" placeholder="z. B. E-Mail, Bank, Server">
+            </label>
+
+            <div id="passwordFields" class="password-fields">
+              <div class="two-col">
+                <label>
+                  Benutzername / E-Mail
+                  <input id="usernameInput" type="text" autocomplete="username" placeholder="name@example.com">
+                </label>
+                <label>
+                  Webadresse
+                  <input id="urlInput" type="url" inputmode="url" placeholder="https://...">
+                </label>
+              </div>
+
+              <label>
+                Passwort
+                <div class="password-line">
+                  <input id="passwordInput" type="password" autocomplete="new-password" placeholder="Passwort">
+                  <button id="togglePassword" class="icon-button" type="button" title="Passwort anzeigen">eye</button>
+                  <button id="copyPassword" class="icon-button" type="button" title="Passwort kopieren">copy</button>
+                </div>
+              </label>
+
+              <div class="generator">
+                <label>
+                  Länge
+                  <input id="lengthInput" type="range" min="12" max="40" value="18">
+                </label>
+                <output id="lengthOutput">18</output>
+                <label class="checkbox">
+                  <input id="symbolsInput" type="checkbox" checked>
+                  Sonderzeichen
+                </label>
+                <button id="generateButton" class="secondary-button" type="button">Generieren</button>
+              </div>
+            </div>
+
+            <label>
+              Notiz
+              <textarea id="notesInput" rows="9" placeholder="Alles, was du sicher ablegen willst..."></textarea>
+            </label>
+
+            <div class="form-actions">
+              <span id="saveState" class="message"></span>
+              <button class="primary-button" type="submit">Speichern</button>
+            </div>
+          </form>
+
+          <div id="emptyState" class="empty-state">
+            <h3>Noch kein Eintrag ausgewählt</h3>
+            <p>Lege ein Passwort oder eine Notiz an. Alles wird lokal verschlüsselt gespeichert.</p>
+            <div class="empty-actions">
+              <button class="primary-button" type="button" data-create="password">Passwort anlegen</button>
+              <button class="secondary-button" type="button" data-create="note">Notiz anlegen</button>
+            </div>
+          </div>
+        </section>
+      </section>
+    </section>
+
+    <section id="confirmOverlay" class="modal-overlay hidden" aria-hidden="true">
+      <div class="confirm-modal" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+        <span class="eyebrow">Bestätigung</span>
+        <h3 id="confirmTitle">Bist du dir sicher?</h3>
+        <p id="confirmText">Dieser Eintrag wird gelöscht.</p>
+        <div class="modal-actions">
+          <button id="confirmCancel" class="ghost-button" type="button">Abbrechen</button>
+          <button id="confirmOk" class="danger-solid-button" type="button">Ja, löschen</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
