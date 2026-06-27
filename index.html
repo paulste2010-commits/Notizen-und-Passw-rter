@@ -136,6 +136,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
         E-Mail Aliase
       </button>
+      <button class="nav-tab" data-tab="scripts" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Skripte
+      </button>
       <button class="nav-tab" data-tab="log" type="button">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
         Aktivitäts-Log
@@ -325,6 +329,23 @@
         <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></div>
         <h3>Keine Aliase</h3>
         <p>Behalte den Überblick über deine Wegwerf-E-Mails.</p>
+      </div>
+    </section>
+
+    <!-- ══ TAB: SKRIPTE ══ -->
+    <section id="tabScripts" class="tab-content hidden">
+      <div class="tab-header">
+        <div>
+          <h3>Skripte</h3>
+          <p class="tab-sub">Bash, Python, SQL und andere Skripte — verschlüsselt gespeichert.</p>
+        </div>
+        <button id="newScriptButton" class="primary-button" type="button">+ Skript</button>
+      </div>
+      <div id="scriptList" class="simple-list script-list"></div>
+      <div id="scriptEmpty" class="empty-state">
+        <div class="empty-state-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></div>
+        <h3>Keine Skripte</h3>
+        <p>Speichere Bash-, Python-, SQL- oder andere Skripte sicher im Tresor.</p>
       </div>
     </section>
 

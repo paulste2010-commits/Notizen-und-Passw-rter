@@ -16,7 +16,7 @@ const DEC = new TextDecoder();
 // ── STATE ──
 const S = {
   key: null, salt: null,
-  vault: { entries: [], files: [], bookmarks: [], codes: [], aliases: [] },
+  vault: { entries: [], files: [], bookmarks: [], codes: [], aliases: [], scripts: [] },
   accountName: "", alertEmail: "",
   activeId: null,
   filter: "all", search: "", sort: "updated",
@@ -68,6 +68,7 @@ const els = {
   bookmarkList:$("bookmarkList"),bookmarkEmpty:$("bookmarkEmpty"),newBookmarkButton:$("newBookmarkButton"),
   codeList:$("codeList"),codeEmpty:$("codeEmpty"),newCodeButton:$("newCodeButton"),
   aliasList:$("aliasList"),aliasEmpty:$("aliasEmpty"),newAliasButton:$("newAliasButton"),
+  scriptList:$("scriptList"),scriptEmpty:$("scriptEmpty"),newScriptButton:$("newScriptButton"),
   logList:$("logList"),logEmpty:$("logEmpty"),clearLogButton:$("clearLogButton"),
   quickAddOverlay:$("quickAddOverlay"),qaEyebrow:$("qaEyebrow"),
   qaTitle:$("qaTitle"),qaFields:$("qaFields"),qaCancel:$("qaCancel"),qaOk:$("qaOk"),
@@ -580,9 +581,15 @@ function openQA({ eyebrow, title, fields }) {
   fields.forEach(f=>{
     const wrap = el("label",{cls:"qa-label"});
     const lbl  = document.createTextNode(f.label);
-    const input = el("input",{type:f.type||"text",placeholder:f.placeholder||"",id:"qa_"+f.key,autocomplete:"off"});
-    if(f.value) input.value=f.value;
-    wrap.append(lbl,input);
+    if (f.type === "textarea") {
+      const ta = el("textarea",{id:"qa_"+f.key, placeholder:f.placeholder||"", rows:6, autocomplete:"off", cls:"qa-textarea"});
+      if(f.value) ta.value=f.value;
+      wrap.append(lbl, ta);
+    } else {
+      const input = el("input",{type:f.type||"text",placeholder:f.placeholder||"",id:"qa_"+f.key,autocomplete:"off"});
+      if(f.value) input.value=f.value;
+      wrap.append(lbl,input);
+    }
     els.qaFields.append(wrap);
     if(f.hint){
       const h=el("p",{cls:"qa-hint",text:f.hint});
@@ -598,7 +605,7 @@ function closeQA(ok) {
   if(!S.pendingQA) return;
   if(!ok){ S.pendingQA(null); S.pendingQA=null; return; }
   const result={};
-  els.qaFields.querySelectorAll("input").forEach(i=>{ result[i.id.replace("qa_","")] = i.value.trim(); });
+  els.qaFields.querySelectorAll("input,textarea").forEach(i=>{ result[i.id.replace("qa_","")] = i.value.trim(); });
   S.pendingQA(result); S.pendingQA=null;
 }
 els.qaCancel.addEventListener("click",()=>closeQA(false));
@@ -780,6 +787,82 @@ els.newAliasButton.addEventListener("click",async()=>{
 });
 
 // ══════════════════════════════════════════════
+//  SCRIPTS TAB
+// ══════════════════════════════════════════════
+function extForLang(lang) {
+  const map = {
+    bash:".sh", shell:".sh", sh:".sh", python:".py", py:".py",
+    javascript:".js", js:".js", typescript:".ts", ts:".ts",
+    sql:".sql", powershell:".ps1", ps1:".ps1", ruby:".rb",
+    php:".php", go:".go", rust:".rs", java:".java",
+    c:".c", "c++":".cpp", cpp:".cpp", html:".html", css:".css",
+    json:".json", yaml:".yml", yml:".yml",
+  };
+  return map[(lang||"").trim().toLowerCase()] || ".txt";
+}
+
+function renderScripts() {
+  const list = S.vault.scripts || [];
+  els.scriptEmpty.classList.toggle("hidden", list.length > 0);
+  els.scriptList.innerHTML = "";
+  list.slice().reverse().forEach(s => {
+    const row = el("div", {cls:"simple-row script-row"});
+    const info = el("div", {cls:"simple-info"});
+    const langBadge = s.language ? el("span", {cls:"lang-badge", text: s.language}) : null;
+    const preview = el("pre", {cls:"script-preview"});
+    preview.textContent = (s.content || "").slice(0, 120) + ((s.content||"").length > 120 ? "…" : "");
+    info.append(
+      el("strong", {text: s.title || "Unbenanntes Skript"}),
+      langBadge,
+      s.note ? el("span", {cls:"simple-note", text: s.note}) : null,
+      preview,
+    );
+    const actions = el("div", {cls:"simple-actions"});
+    const copyBtn = el("button", {cls:"ghost-button compact", text:"Kopieren", type:"button"});
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(s.content || "");
+      toast("Skript kopiert.", "success");
+    });
+    const dlBtn = el("button", {cls:"secondary-button compact", text:"⬇ Download", type:"button"});
+    dlBtn.addEventListener("click", () => {
+      const safeName = (s.title||"skript").replace(/[^a-z0-9_\-]+/gi,"_").slice(0,60)||"skript";
+      const ext = extForLang(s.language);
+      const blob = new Blob([s.content||""], {type:"text/plain"});
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = safeName + ext;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+    const rmBtn = el("button", {cls:"danger-button compact", text:"Löschen", type:"button"});
+    rmBtn.addEventListener("click", async () => {
+      const ok = await openConfirm({title:"Skript löschen?", text:`"${s.title||"Skript"}" löschen?`});
+      if (!ok) return;
+      S.vault.scripts = S.vault.scripts.filter(x => x.id !== s.id);
+      await encryptVault(); renderScripts(); addLog("Skript gelöscht", s.title||"");
+      toast("Skript gelöscht.", "success");
+    });
+    actions.append(copyBtn, dlBtn, rmBtn);
+    row.append(info, actions);
+    els.scriptList.append(row);
+  });
+}
+
+els.newScriptButton.addEventListener("click", async () => {
+  const r = await openQA({ eyebrow:"Skripte", title:"Neues Skript", fields:[
+    {key:"title",  label:"Titel",            placeholder:"z. B. Backup-Script, Deploy-Befehl"},
+    {key:"language",label:"Sprache (optional)", placeholder:"z. B. Bash, Python, SQL"},
+    {key:"content",label:"Skript-Inhalt",    type:"textarea", placeholder:"#!/bin/bash\n…"},
+    {key:"note",   label:"Notiz (optional)", placeholder:"Wofür ist dieses Skript?"},
+  ]});
+  if (!r || !r.content) return;
+  S.vault.scripts = S.vault.scripts || [];
+  S.vault.scripts.push({id:uid(), title:r.title||"Unbenanntes Skript", language:r.language, content:r.content, note:r.note, addedAt:now()});
+  await encryptVault(); renderScripts(); addLog("Skript gespeichert", r.title||"");
+  toast("Skript gespeichert.", "success");
+});
+
+// ══════════════════════════════════════════════
 //  LOG TAB
 // ══════════════════════════════════════════════
 function renderLog() {
@@ -822,6 +905,7 @@ document.querySelectorAll(".nav-tab").forEach(btn=>{
     if(tab==="bookmarks") renderBookmarks();
     if(tab==="codes")     renderCodes();
     if(tab==="aliases")   renderAliases();
+    if(tab==="scripts")   renderScripts();
     if(tab==="log")       renderLog();
   });
 });
@@ -839,14 +923,14 @@ function setUnlocked() {
   const lastId=localStorage.getItem(LAST_ID_KEY);
   if(lastId && S.vault.entries.find(e=>e.id===lastId)) S.activeId=lastId;
   // ensure sub-lists exist
-  ["files","bookmarks","codes","aliases"].forEach(k=>{ if(!S.vault[k]) S.vault[k]=[]; });
+  ["files","bookmarks","codes","aliases","scripts"].forEach(k=>{ if(!S.vault[k]) S.vault[k]=[]; });
   render();
   addLog("Entsperrt",S.accountName,"success");
 }
 
 function lock() {
   stopAutoLock(); clearInterval(S.clipboardTimer);
-  S.key=null; S.salt=null; S.vault={entries:[],files:[],bookmarks:[],codes:[],aliases:[]};
+  S.key=null; S.salt=null; S.vault={entries:[],files:[],bookmarks:[],codes:[],aliases:[],scripts:[]};
   S.accountName=""; S.alertEmail=""; S.activeId=null;
   els.vaultScreen.classList.add("hidden");
   els.lockScreen.classList.remove("hidden");
@@ -904,7 +988,7 @@ els.unlockForm.addEventListener("submit", async e=>{
     } else {
       S.salt=crypto.getRandomValues(new Uint8Array(16));
       S.key=await deriveKey(password,S.salt);
-      S.vault={entries:[],files:[],bookmarks:[],codes:[],aliases:[]};
+      S.vault={entries:[],files:[],bookmarks:[],codes:[],aliases:[],scripts:[]};
       S.accountName=accountName;
       S.alertEmail=els.alertEmail.value.trim();
       await encryptVault();
