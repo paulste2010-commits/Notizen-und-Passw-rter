@@ -76,8 +76,6 @@ const els = {
 // ── SVG ICONS (static strings — no user data) ──
 const SVG = {
   eyeOpen:  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`,
-  lockClosed:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-  lockOpen:  `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>`,
   eyeClosed:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/></svg>`,
   starFill: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
   starEmpty:`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`,
@@ -857,17 +855,15 @@ function lock() {
 
 function updateLockCopy() {
   const stored=getStoredVault(); const has=Boolean(stored);
-  setText(els.lockHeading, has ? "Willkommen zurück" : "Tresor erstellen");
   setText(els.lockHint, has
     ? "Gib deinen Account-Namen und dein Master-Passwort ein, um den Tresor zu entsperren."
     : "Erstelle einen Account mit Master-Passwort. Deine Daten bleiben verschlüsselt in diesem Browser.");
   els.accountName.placeholder = stored?.accountName||"z. B. Paul";
+  // show alert email field only on first setup
   els.alertEmailLabel.classList.toggle("hidden", has);
   setHTML(els.unlockButton, has
-    ? `${SVG.lockOpen}<span>Entsperren</span>`
-    : `${SVG.lockClosed}<span>Tresor erstellen</span>`);
-  // Show QR transfer only if vault exists
-  if(els.qrSection) els.qrSection.style.display = has ? "" : "none";
+    ? `${SVG.eyeOpen}<span>Entsperren</span>`
+    : `${SVG.eyeOpen}<span>Tresor erstellen</span>`);
 }
 
 // ══════════════════════════════════════════════
@@ -1091,64 +1087,3 @@ els.themeButton.addEventListener("click",()=>applyTheme(document.body.dataset.th
 applyTheme(localStorage.getItem(THEME_KEY)||"dark");
 updateLockCopy();
 updateOnline();
-
-// ── QR CODE TRANSFER ──
-// Uses a tiny inline QR encoder (no external lib needed for small data)
-// We encode the encrypted vault JSON as a QR code so user can scan on phone
-// The vault is already AES-encrypted — safe to transmit via QR
-
-async function loadQRLib() {
-  return new Promise((resolve, reject) => {
-    if (window.QRCode) { resolve(); return; }
-    const s = document.createElement("script");
-    s.src = "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js";
-    s.onload = resolve; s.onerror = reject;
-    document.head.append(s);
-  });
-}
-
-let qrInstance = null;
-
-els.qrToggle && els.qrToggle.addEventListener("click", async () => {
-  const box = els.qrBox;
-  const isOpen = box.classList.contains("open");
-  if (isOpen) { box.classList.remove("open"); return; }
-
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (!stored) { toast("Kein Tresor zum Übertragen.", "warning"); return; }
-
-  // Check size — QR codes can hold ~2-3KB max reliably
-  const bytes = new TextEncoder().encode(stored).length;
-  if (bytes > 2800) {
-    toast("Tresor ist zu groß für QR-Code (" + Math.round(bytes/1024*10)/10 + " KB). Nutze Export stattdessen.", "warning", 6000);
-    // Still show export hint
-    box.classList.add("open");
-    els.qrCanvas.style.display = "none";
-    const hint = box.querySelector("p");
-    if(hint) setText(hint, "Dein Tresor ist zu groß für einen QR-Code. Nutze stattdessen den Export-Button oben rechts — lade die JSON-Datei dann auf deinem Handy hoch.");
-    return;
-  }
-
-  els.qrCanvas.style.display = "";
-  const hint = box.querySelector("p");
-  if(hint) setText(hint, "Scanne diesen QR-Code mit deinem Handy um den verschlüsselten Tresor zu übertragen. Dein Master-Passwort bleibt dabei geheim.");
-
-  try {
-    await loadQRLib();
-    box.classList.add("open");
-    // Clear previous
-    els.qrCanvas.innerHTML = "";
-    if (qrInstance) { try { qrInstance.clear(); } catch {} }
-
-    qrInstance = new QRCode(els.qrCanvas, {
-      text: stored,
-      width: 220, height: 220,
-      colorDark: "#000000", colorLight: "#ffffff",
-      correctLevel: QRCode.CorrectLevel.M,
-    });
-    addLog("QR-Transfer", "QR-Code generiert");
-  } catch(e) {
-    toast("QR-Code konnte nicht geladen werden.", "error");
-    console.error(e);
-  }
-});
