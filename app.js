@@ -801,6 +801,103 @@ function extForLang(lang) {
   return map[(lang||"").trim().toLowerCase()] || ".txt";
 }
 
+// ── Mini Syntax Highlighter ──
+function highlight(code, lang) {
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const l = (lang||"").toLowerCase();
+  const isShell  = ["bash","sh","shell","zsh"].includes(l);
+  const isPython = ["python","py"].includes(l);
+  const isSQL    = ["sql"].includes(l);
+
+  const lines = code.split("\n");
+  const result = lines.map(line => {
+    const commentChar = isShell || isPython ? "#" : isSQL ? "--" : "//";
+    const commentIdx  = line.indexOf(commentChar);
+    let codePart    = commentIdx !== -1 ? line.slice(0, commentIdx) : line;
+    const commentPart = commentIdx !== -1 ? line.slice(commentIdx) : "";
+
+    let h = esc(codePart);
+
+    // Strings
+    h = h.replace(/(["'`])((?:\\.|(?!\1).)*?)\1/g,
+      (_, q, mid) => `<span class="tok-string">${esc(q)}${mid}${esc(q)}</span>`);
+
+    // Numbers
+    h = h.replace(/\b(\d+\.?\d*)\b/g, '<span class="tok-number">$1</span>');
+
+    // Language keywords & builtins
+    if (isShell) {
+      h = h.replace(/\b(if|then|else|elif|fi|for|while|do|done|case|esac|function|return|export|local|source|echo|exit|in|set|unset|shift|trap)\b/g,
+        '<span class="tok-keyword">$1</span>');
+      h = h.replace(/\b(cd|ls|grep|sed|awk|curl|wget|mkdir|rm|cp|mv|chmod|chown|sudo|apt|git|docker|npm|yarn|python3?|node)\b/g,
+        '<span class="tok-builtin">$1</span>');
+    } else if (isPython) {
+      h = h.replace(/\b(def|class|if|elif|else|for|while|return|import|from|as|with|try|except|finally|raise|pass|break|continue|and|or|not|in|is|lambda|yield|True|False|None|async|await)\b/g,
+        '<span class="tok-keyword">$1</span>');
+      h = h.replace(/\b(print|len|range|type|int|str|float|list|dict|set|tuple|open|super|self)\b/g,
+        '<span class="tok-builtin">$1</span>');
+    } else if (isSQL) {
+      h = h.replace(/\b(SELECT|FROM|WHERE|JOIN|LEFT|RIGHT|INNER|ON|GROUP|ORDER|BY|HAVING|INSERT|UPDATE|DELETE|CREATE|DROP|ALTER|TABLE|AS|AND|OR|NOT|IN|IS|NULL|LIKE|BETWEEN|DISTINCT|LIMIT|UNION|ALL|WHEN|THEN|CASE|END)\b/gi,
+        '<span class="tok-keyword">$1</span>');
+      h = h.replace(/\b(COUNT|SUM|AVG|MAX|MIN|COALESCE|CAST|CONVERT)\b/gi,
+        '<span class="tok-builtin">$1</span>');
+    } else {
+      h = h.replace(/\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|class|extends|import|export|default|async|await|try|catch|finally|throw|typeof|instanceof|in|of|true|false|null|undefined|void|this|super|static|get|set)\b/g,
+        '<span class="tok-keyword">$1</span>');
+      h = h.replace(/\b(console|document|window|Array|Object|String|Number|Boolean|Promise|Math|JSON|Date|Error|Map|Set|setTimeout|setInterval|fetch|require|module|process)\b/g,
+        '<span class="tok-builtin">$1</span>');
+    }
+
+    // Function calls — word( 
+    h = h.replace(/\b([a-zA-Z_]\w*)(?=\s*\()/g,
+      m => m.match(/tok-/) ? m : `<span class="tok-fn">${m}</span>`);
+
+    const commentHtml = commentPart
+      ? `<span class="tok-comment">${esc(commentPart)}</span>` : "";
+    return h + commentHtml;
+  });
+  return result.join("\n");
+}
+
+// ── Script Viewer Modal ──
+(function setupScriptViewer() {
+  const overlay = $("scriptViewerOverlay");
+  const svCode  = $("svCode");
+  const svTitle = $("svTitle");
+  const svLang  = $("svLangBadge");
+  let cur = null;
+
+  window.openScriptViewer = function(s) {
+    cur = s;
+    svTitle.textContent = s.title || "Unbenanntes Skript";
+    if (s.language) { svLang.textContent = s.language; svLang.style.display = ""; }
+    else svLang.style.display = "none";
+    svCode.innerHTML = highlight(s.content || "", s.language);
+    overlay.classList.remove("hidden");
+    overlay.setAttribute("aria-hidden","false");
+  };
+  $("svCloseBtn").addEventListener("click", () => {
+    overlay.classList.add("hidden"); overlay.setAttribute("aria-hidden","true");
+  });
+  overlay.addEventListener("click", e => {
+    if (e.target === overlay) { overlay.classList.add("hidden"); overlay.setAttribute("aria-hidden","true"); }
+  });
+  $("svCopyBtn").addEventListener("click", () => {
+    if (!cur) return;
+    navigator.clipboard.writeText(cur.content || "");
+    toast("Skript kopiert.", "success");
+  });
+  $("svDlBtn").addEventListener("click", () => {
+    if (!cur) return;
+    const safeName = (cur.title||"skript").replace(/[^a-z0-9_\-]+/gi,"_").slice(0,60)||"skript";
+    const blob = new Blob([cur.content||""], {type:"text/plain"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = safeName + extForLang(cur.language);
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+})();
+
 function renderScripts() {
   const list = S.vault.scripts || [];
   els.scriptEmpty.classList.toggle("hidden", list.length > 0);
@@ -809,8 +906,12 @@ function renderScripts() {
     const row = el("div", {cls:"simple-row script-row"});
     const info = el("div", {cls:"simple-info"});
     const langBadge = s.language ? el("span", {cls:"lang-badge", text: s.language}) : null;
-    const preview = el("pre", {cls:"script-preview"});
-    preview.textContent = (s.content || "").slice(0, 120) + ((s.content||"").length > 120 ? "…" : "");
+
+    const preview = el("pre", {cls:"script-preview script-preview--clickable"});
+    preview.innerHTML = highlight((s.content||"").slice(0,300) + ((s.content||"").length>300?"\n…":""), s.language);
+    preview.title = "Klicken für vollständige Ansicht";
+    preview.addEventListener("click", () => window.openScriptViewer(s));
+
     info.append(
       el("strong", {text: s.title || "Unbenanntes Skript"}),
       langBadge,
@@ -826,13 +927,11 @@ function renderScripts() {
     const dlBtn = el("button", {cls:"secondary-button compact", text:"⬇ Download", type:"button"});
     dlBtn.addEventListener("click", () => {
       const safeName = (s.title||"skript").replace(/[^a-z0-9_\-]+/gi,"_").slice(0,60)||"skript";
-      const ext = extForLang(s.language);
       const blob = new Blob([s.content||""], {type:"text/plain"});
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
-      a.download = safeName + ext;
-      a.click();
-      URL.revokeObjectURL(a.href);
+      a.download = safeName + extForLang(s.language);
+      a.click(); URL.revokeObjectURL(a.href);
     });
     const rmBtn = el("button", {cls:"danger-button compact", text:"Löschen", type:"button"});
     rmBtn.addEventListener("click", async () => {

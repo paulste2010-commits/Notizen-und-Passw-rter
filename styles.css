@@ -854,17 +854,24 @@ body[data-theme="light"] .ghost-button       { background: rgba(255,255,255,.55)
 .script-preview {
   font-family: 'JetBrains Mono', monospace;
   font-size: .72rem;
-  color: var(--muted);
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,.07);
   border-radius: 6px;
-  padding: 6px 10px;
+  padding: 8px 12px;
   margin: 6px 0 0;
-  white-space: pre-wrap;
-  word-break: break-all;
-  max-height: 72px;
+  white-space: pre;
   overflow: hidden;
-  line-height: 1.5;
+  max-height: 80px;
+  line-height: 1.6;
+  color: #cdd6f4;
+}
+.script-preview--clickable {
+  cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.script-preview--clickable:hover {
+  border-color: rgba(140,100,255,.4);
+  box-shadow: 0 0 0 2px rgba(140,100,255,.15);
 }
 
 /* ── LOG LIST ── */
@@ -895,14 +902,61 @@ body[data-theme="light"] .ghost-button       { background: rgba(255,255,255,.55)
   font-family: 'JetBrains Mono', monospace;
   font-size: .82rem;
   resize: vertical;
-  min-height: 120px;
-  padding: 8px 10px;
+  min-height: 260px;
+  padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--glass-border);
-  background: var(--glass-bg);
-  color: var(--text);
-  line-height: 1.5;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  line-height: 1.6;
 }
+
+/* ── SCRIPT VIEWER MODAL ── */
+.script-viewer-modal {
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 14px;
+  width: min(92vw, 900px);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+.script-viewer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+.script-viewer-meta { display: flex; flex-direction: column; gap: 3px; }
+.script-viewer-meta h3 { margin: 0; font-size: 1rem; color: #cdd6f4; }
+.script-viewer-meta .eyebrow { color: #6c7086; }
+.script-viewer-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.script-viewer-code {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: .82rem;
+  line-height: 1.7;
+  padding: 20px 24px;
+  margin: 0;
+  overflow: auto;
+  flex: 1;
+  color: #cdd6f4;
+  white-space: pre;
+  tab-size: 2;
+}
+/* ── Syntax token colours (VS Code Dark+) ── */
+.tok-keyword  { color: #c678dd; }   /* purple   — if, function, const */
+.tok-string   { color: #98c379; }   /* green    — "strings" */
+.tok-comment  { color: #5c6370; font-style: italic; }  /* grey     — # comments */
+.tok-number   { color: #d19a66; }   /* orange   — 42, 3.14 */
+.tok-fn       { color: #61afef; }   /* blue     — function names */
+.tok-builtin  { color: #e06c75; }   /* red      — built-ins, operators */
+.tok-punct    { color: #abb2bf; }   /* grey-ish — () {} [] */
 
 /* ── SUCCESS LIGHT VAR ── */
 :root { --success-light: rgba(52,211,153,.12); }

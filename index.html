@@ -405,6 +405,25 @@
     </div>
   </section>
 
+  <!-- Script Viewer Modal -->
+  <section id="scriptViewerOverlay" class="modal-overlay hidden" aria-hidden="true">
+    <div class="script-viewer-modal" role="dialog" aria-modal="true">
+      <div class="script-viewer-header">
+        <div class="script-viewer-meta">
+          <span class="eyebrow" id="svEyebrow">Skript</span>
+          <h3 id="svTitle"></h3>
+          <span id="svLangBadge" class="lang-badge"></span>
+        </div>
+        <div class="script-viewer-actions">
+          <button id="svCopyBtn" class="ghost-button compact" type="button">Kopieren</button>
+          <button id="svDlBtn" class="secondary-button compact" type="button">⬇ Download</button>
+          <button id="svCloseBtn" class="ghost-button compact" type="button">✕ Schließen</button>
+        </div>
+      </div>
+      <pre id="svCode" class="script-viewer-code"></pre>
+    </div>
+  </section>
+
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 </main>
 <script src="app.js"></script>
