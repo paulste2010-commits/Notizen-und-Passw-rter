@@ -10,34 +10,64 @@
 <body>
 <main id="app" class="app-shell">
 
-  <!-- LOCK SCREEN -->
+  <!-- LOCK SCREEN — full page split -->
   <section id="lockScreen" class="lock-screen">
-    <div class="brand-mark">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+
+    <!-- LEFT — decorative panel -->
+    <div class="lock-left">
+      <div class="lock-deco">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      </div>
+      <p class="lock-deco-title">Tresor</p>
+      <p class="lock-deco-sub">Deine Passwörter, Dateien und Notizen — verschlüsselt, offline, sicher.</p>
     </div>
-    <h1>Tresor</h1>
-    <p id="lockHint" class="lock-hint">Erstelle ein Master-Passwort. Deine Daten bleiben verschlüsselt in diesem Browser.</p>
-    <form id="unlockForm" class="unlock-form">
-      <label for="accountName">Account-Name
-        <input id="accountName" type="text" autocomplete="off" minlength="2" maxlength="40" required placeholder="z. B. Paul">
-      </label>
-      <label for="masterPassword">Master-Passwort
-        <div class="password-line">
-          <input id="masterPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mindestens 8 Zeichen">
-          <button class="icon-button" id="toggleMaster" type="button">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          </button>
+
+    <!-- RIGHT — login form -->
+    <div class="lock-right">
+      <!-- mobile only brand -->
+      <div class="lock-mobile-brand">
+        <div class="brand-mark" style="margin-bottom:0">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
         </div>
-      </label>
-      <label id="alertEmailLabel" class="hidden" for="alertEmail">Alarm-E-Mail <span style="color:var(--muted);font-weight:400;text-transform:none">(optional — für Einbruchs-Alarm)</span>
-        <input id="alertEmail" type="email" autocomplete="off" placeholder="deine@email.de">
-      </label>
-      <button id="unlockButton" class="primary-button" type="submit" style="margin-top:4px;">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-        Tresor starten
-      </button>
-      <p id="lockMessage" class="message" role="status"></p>
-    </form>
+        <h1 style="font-size:1.5rem;margin:0">Tresor</h1>
+      </div>
+
+      <h1 id="lockHeading" style="margin:0 0 6px;font-size:1.6rem">Willkommen zurück</h1>
+      <p id="lockHint" class="lock-hint">Erstelle ein Master-Passwort. Deine Daten bleiben verschlüsselt in diesem Browser.</p>
+
+      <form id="unlockForm" class="unlock-form">
+        <label for="accountName">Account-Name
+          <input id="accountName" type="text" autocomplete="off" minlength="2" maxlength="40" required placeholder="z. B. Paul">
+        </label>
+        <label for="masterPassword">Master-Passwort
+          <div class="password-line" style="grid-template-columns:1fr auto">
+            <input id="masterPassword" type="password" autocomplete="current-password" minlength="8" required placeholder="Mindestens 8 Zeichen">
+            <button class="icon-button" id="toggleMaster" type="button">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </label>
+        <label id="alertEmailLabel" class="hidden" for="alertEmail">Alarm-E-Mail <span style="color:var(--muted);font-weight:400;text-transform:none">(optional)</span>
+          <input id="alertEmail" type="email" autocomplete="off" placeholder="deine@email.de">
+        </label>
+        <button id="unlockButton" class="primary-button" type="submit" style="margin-top:4px;width:100%;">
+          Tresor starten
+        </button>
+        <p id="lockMessage" class="message" role="status"></p>
+      </form>
+
+      <!-- QR Transfer Section -->
+      <div class="qr-section" id="qrSection" style="display:none">
+        <button class="qr-toggle" type="button" id="qrToggle">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3h-3z"/><path d="M17 14h3v3h-3z"/><path d="M14 17h3v3h-3z"/><path d="M17 17h3v3h-3z"/></svg>
+          Auf Handy übertragen (QR-Code)
+        </button>
+        <div class="qr-box" id="qrBox">
+          <canvas id="qrCanvas"></canvas>
+          <p>Scanne diesen QR-Code mit deinem Handy um den verschlüsselten Tresor zu übertragen. Dein Master-Passwort bleibt dabei geheim.</p>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- VAULT SCREEN -->
